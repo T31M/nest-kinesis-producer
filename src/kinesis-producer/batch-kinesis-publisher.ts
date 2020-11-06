@@ -1,8 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import {
-  PutRecordsInput,
-  PutRecordsRequestEntry,
-} from 'aws-sdk/clients/kinesis';
+import { PutRecordsInput, PutRecordsRequestEntry } from 'aws-sdk/clients/kinesis';
 
 import { Kinesis } from 'aws-sdk';
 import { KinesisEvent } from './kinesis-event.interface';
@@ -13,16 +10,13 @@ export class BatchKinesisPublisher {
   private static readonly ONE_MEG = 1024 * 1024;
   protected entries: PutRecordsRequestEntry[] = [];
   protected streamName: string;
-  private dataSize: number = 0;
+  private dataSize = 0;
   constructor(protected readonly kinesis: Kinesis) {
     this.baseLogger = new Logger(BatchKinesisPublisher.name);
   }
 
   async putRecords(streamName: string, events: KinesisEvent[]): Promise<void> {
-    this.baseLogger.log(
-      `putRecords() invoked for ${events.length}
-       records on stream ${streamName}`,
-    );
+    this.baseLogger.log(`putRecords() invoked for ${events.length} records on stream ${streamName}`);
     this.streamName = streamName;
     for (const x of events) {
       await this.addEntry({
@@ -50,20 +44,16 @@ export class BatchKinesisPublisher {
   }
 
   protected async addEntry(entry: PutRecordsRequestEntry): Promise<void> {
-    const entryDataSize: number =
-      entry.Data.toString('utf8').length + entry.PartitionKey.length;
+    const entryDataSize: number = entry.Data.toString('utf8').length + entry.PartitionKey.length;
     if (Number.isNaN(entryDataSize)) {
       this.baseLogger.error(
-        `Cannot produce data size of partitionKey: ${
-          entry.PartitionKey
-        }  |  Data: ${entry.Data.toString('utf8')}`,
+        `Cannot produce data size of partitionKey: ${entry.PartitionKey}  |  Data: ${entry.Data.toString('utf8')}`,
       );
       return;
     }
     if (entryDataSize > BatchKinesisPublisher.ONE_MEG) {
       this.baseLogger.error(
-        `FATAL: entry exceeds maximum size of 1M and
-                will not be published, partitionkey: ${entry.PartitionKey}`,
+        `FATAL: entry exceeds maximum size of 1M and will not be published, partitionkey: ${entry.PartitionKey}`,
       );
       return;
     }
